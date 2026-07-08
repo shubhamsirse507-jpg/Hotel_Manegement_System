@@ -2,10 +2,6 @@ import hashlib
 import os
 import binascii
 
-# =====================================================
-# Password hashing using PBKDF2-HMAC-SHA256 (built into
-# Python's hashlib - no extra pip install needed).
-# =====================================================
 
 ITERATIONS = 100_000
 
