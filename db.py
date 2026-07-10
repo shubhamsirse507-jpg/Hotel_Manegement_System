@@ -5,6 +5,6 @@ def get_connection():
         host="localhost",
         user="root",
         password="Shubham@1978",
-        database="hotel_management"
+        database="hms_db"
     )
 print("Db connected")
