@@ -1,0 +1,243 @@
+*Staff + housekeeping
+
+from tkinter import *
+from tkinter import ttk, messagebox
+import sqlite3
+import database
+
+root = Tk()
+root.title("Staff Management & Housekeeping")
+root.geometry("1000x600")
+
+# ==== Database 
+
+def connect_db():
+    return sqlite3.connect("hotel.db")
+
+# == Staff Functions 
+
+def add_staff():
+    conn = connect_db()
+    cursor = conn.cursor()
+
+    cursor.execute(
+        "INSERT INTO staff(name,gender,phone,role,salary) VALUES(?,?,?,?,?)",
+        (
+            name_var.get(),
+            gender_var.get(),
+            phone_var.get(),
+            role_var.get(),
+            salary_var.get(),
+        ),
+    )
+
+    conn.commit()
+    conn.close()
+
+    messagebox.showinfo("Success", "Staff Added Successfully")
+    show_staff()
+
+
+def show_staff():
+    staff_table.delete(*staff_table.get_children())
+
+    conn = connect_db()
+    cursor = conn.cursor()
+
+    cursor.execute("SELECT * FROM staff")
+    rows = cursor.fetchall()
+
+    conn.close()
+
+    for row in rows:
+        staff_table.insert("", END, values=row)
+
+
+def delete_staff():
+    selected = staff_table.focus()
+
+    if selected == "":
+        return
+
+    values = staff_table.item(selected)["values"]
+
+    conn = connect_db()
+    cursor = conn.cursor()
+
+    cursor.execute("DELETE FROM staff WHERE staff_id=?", (values[0],))
+
+    conn.commit()
+    conn.close()
+
+    show_staff()
+
+
+def get_data(event):
+    row = staff_table.focus()
+    content = staff_table.item(row)
+
+    data = content["values"]
+
+    if data:
+        name_var.set(data[1])
+        gender_var.set(data[2])
+        phone_var.set(data[3])
+        role_var.set(data[4])
+        salary_var.set(data[5])
+
+
+def update_staff():
+    selected = staff_table.focus()
+
+    if selected == "":
+        return
+
+    values = staff_table.item(selected)["values"]
+
+    conn = connect_db()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+    UPDATE staff
+    SET name=?,gender=?,phone=?,role=?,salary=?
+    WHERE staff_id=?
+    """,
+    (
+        name_var.get(),
+        gender_var.get(),
+        phone_var.get(),
+        role_var.get(),
+        salary_var.get(),
+        values[0]
+    ))
+
+    conn.commit()
+    conn.close()
+
+    messagebox.showinfo("Success","Updated Successfully")
+
+    show_staff()
+
+# ================= Housekeeping =================
+
+def assign_room():
+    conn = connect_db()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+    INSERT OR REPLACE INTO housekeeping
+    VALUES(?,?,?)
+    """,
+    (
+        room_var.get(),
+        assign_var.get(),
+        status_var.get()
+    ))
+
+    conn.commit()
+    conn.close()
+
+    messagebox.showinfo("Success","Room Assigned")
+
+
+# ==== Variables 
+
+name_var = StringVar()
+gender_var = StringVar()
+phone_var = StringVar()
+role_var = StringVar()
+salary_var = StringVar()
+
+room_var = StringVar()
+assign_var = StringVar()
+status_var = StringVar()
+
+# === Staff Frame 
+
+Label(root,text="Staff Management",
+font=("Arial",18,"bold")).pack()
+
+frame=Frame(root)
+frame.pack()
+
+Label(frame,text="Name").grid(row=0,column=0)
+
+Entry(frame,textvariable=name_var).grid(row=0,column=1)
+
+Label(frame,text="Gender").grid(row=1,column=0)
+
+ttk.Combobox(frame,textvariable=gender_var,
+values=["Male","Female"]).grid(row=1,column=1)
+
+Label(frame,text="Phone").grid(row=2,column=0)
+
+Entry(frame,textvariable=phone_var).grid(row=2,column=1)
+
+Label(frame,text="Role").grid(row=3,column=0)
+
+ttk.Combobox(frame,textvariable=role_var,
+values=[
+"Manager",
+"Receptionist",
+"Housekeeping",
+"Chef",
+"Security"
+]).grid(row=3,column=1)
+
+Label(frame,text="Salary").grid(row=4,column=0)
+
+Entry(frame,textvariable=salary_var).grid(row=4,column=1)
+
+Button(frame,text="Add",command=add_staff,width=10).grid(row=5,column=0)
+
+Button(frame,text="Update",command=update_staff,width=10).grid(row=5,column=1)
+
+Button(frame,text="Delete",command=delete_staff,width=10).grid(row=5,column=2)
+
+# === Table 
+
+columns=("ID","Name","Gender","Phone","Role","Salary")
+
+staff_table=ttk.Treeview(root,columns=columns,show="headings")
+
+for col in columns:
+    staff_table.heading(col,text=col)
+
+staff_table.pack(fill=BOTH,expand=True)
+
+staff_table.bind("<ButtonRelease-1>",get_data)
+
+# == Housekeeping
+
+house=LabelFrame(root,text="Housekeeping")
+
+house.pack(fill=X,pady=10)
+
+Label(house,text="Room No").grid(row=0,column=0)
+
+Entry(house,textvariable=room_var).grid(row=0,column=1)
+
+Label(house,text="Assign Staff").grid(row=0,column=2)
+
+Entry(house,textvariable=assign_var).grid(row=0,column=3)
+
+Label(house,text="Status").grid(row=0,column=4)
+
+ttk.Combobox(
+house,
+textvariable=status_var,
+values=[
+"Clean",
+"Dirty",
+"In Progress"
+]).grid(row=0,column=5)
+
+Button(
+house,
+text="Assign",
+command=assign_room
+).grid(row=0,column=6,padx=10)
+
+show_staff()
+
+root.mainloop()
